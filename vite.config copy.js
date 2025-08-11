@@ -1,17 +1,14 @@
 import { defineConfig } from "vite";
 import laravel from "laravel-vite-plugin";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 export default defineConfig({
     server: {
         host: true,
         port: 5173,
         strictPort: true,
-        origin: process.env.VITE_ORIGIN || "http://localhost:5173",
+        origin: "http://localhost:5171",
         cors: {
-            origin: process.env.APP_URL || "http://localhost:8591",
+            origin: "http://localhost:8591",
             methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowedHeaders: ["*"],
             credentials: true,

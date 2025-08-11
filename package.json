@@ -4,7 +4,7 @@
     "version": "2.0.1",
     "scripts": {
         "build": "vite build",
-        "dev": "vite",
+        "dev": "vite --host 0.0.0.0 --port 5173",
         "commit": "cz",
         "release": "standard-version",
         "release:msg": "node release-with-msg.js",
@@ -36,6 +36,7 @@
     },
     "dependencies": {
         "chart.js": "^4.5.0",
+        "dotenv": "^17.2.1",
         "flag-icon-css": "^4.1.7",
         "flag-icons": "^7.5.0",
         "sweetalert2": "^11.6.13"

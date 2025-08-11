@@ -1,65 +1,62 @@
-# Use a imagem base do PHP
 FROM php:8.4-fpm
 
-# Definição de variáveis
 ARG user=projetos
 ARG uid=1000
 
-# Cria usuário do sistema para rodar comandos do Composer e Artisan
-RUN useradd -m -u $uid -G www-data,root -s /bin/bash $user && mkdir -p /home/$user/.composer && chown -R $user:$user /home/$user
+# Cria grupo e usuário com UID e GID específicos
+RUN groupadd -g $uid $user \
+    && useradd -m -u $uid -g $uid -G www-data,root -s /bin/bash $user \
+    && mkdir -p /home/$user/.composer \
+    && chown -R $user:$user /home/$user
 
-# Atualiza e instala dependências do sistema
+# Instala dependências do sistema necessárias
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    nano \
-    procps\
-    lsof\
-    net-tools\
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip && apt-get clean && rm -rf /var/lib/apt/lists/*
+    git curl nano procps lsof net-tools libpng-dev libonig-dev libxml2-dev zip unzip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copia arquivos de configuração do PHP
+# Copia configuração PHP customizada e script de start
 COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
-# Instala Node.js e npm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get update && apt-get install -y nodejs && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Instala Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get update && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instala extensões do PHP
+# Instala extensões PHP necessárias
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
 
-# Instala e configura o Composer
+# Copia o composer oficial para dentro do container PHP
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instala Redis
-RUN pecl install -o -f redis && rm -rf /tmp/pear && docker-php-ext-enable redis
+# Instala e habilita a extensão Redis via PECL
+RUN pecl install -o -f redis \
+    && rm -rf /tmp/pear \
+    && docker-php-ext-enable redis
 
-# Define o diretório de trabalho
-WORKDIR /var/www/html
+WORKDIR /var/www
 
-# Copia os arquivos do projeto
-COPY . /var/www/html
-
-# Configura permissões do diretório do projeto
-RUN chown -R $user:$user /var/www/html
-
-# Permite que o usuário tenha permissões de root temporariamente para instalação
 USER root
 
-# Instala dependências do PHP e Node.js antes de mudar para o usuário
-RUN git config --global --add safe.directory /var/www/html && composer install --no-interaction --no-progress || true && chown -R $user:$user /var/www/html
+# Copia todo o código antes para garantir autoload correto
+COPY . .
 
+# Instala dependências PHP
+RUN composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+# Instala dependências Node.js
 RUN npm install
 
-# Retorna para o usuário especificado
+# Ajusta permissões para o usuário criado
+RUN chown -R $user:$user /var/www
+
+# Configura git safe directory para evitar problemas de permissões
+RUN git config --global --add safe.directory /var/www
+
+# Volta a usar o usuário não-root para segurança
 USER $user
 
-# Expõe a porta 8080 (PHP-FPM) e a porta 5173 (Vite)
 EXPOSE 8080 5173
 
-# Define o entrypoint para o script de inicialização
 ENTRYPOINT ["/usr/local/bin/start.sh"]
