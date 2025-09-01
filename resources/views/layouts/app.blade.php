@@ -11,6 +11,13 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#32a2b9">
+
+    <!-- iOS (Safari) suporte -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <script src="{{ asset('js/theme-init.js') }}" defer></script>
 
@@ -27,7 +34,10 @@
 
 </head>
 
+
+
 <body class="bg-dashboard">
+
     @include('layouts.navigation') {{-- sua navbar com h-20 fixed top-0 --}}
 
     <div class="flex flex-col sm:flex-row">
@@ -46,6 +56,24 @@
     <footer class="fixed bottom-0 z-50 w-full py-2 pr-4 text-sm text-right text-gray-500">
         Versão: {{ trim(exec('git describe --tags --abbrev=0')) }}
     </footer>
+
+
+
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker
+                    .register("/service-worker.js")
+                    .then(function(registration) {
+                        console.log("ServiceWorker registrado com sucesso:", registration);
+                    })
+                    .catch(function(error) {
+                        console.log("Falha ao registrar ServiceWorker:", error);
+                    });
+            });
+        }
+    </script>
 
     <script>
         function languageSelect() {
